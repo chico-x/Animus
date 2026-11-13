@@ -1,0 +1,175 @@
+{% extends "layout.html" %}
+{% block title %}Contract Information - SECURE-Cert{% endblock %}
+{% block content %}
+
+  <!-- Breadcrumb Navigation -->
+  <div class="breadcrumb-custom">
+    <div class="container">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+          <li class="breadcrumb-item"><a href="/help">Help & Support</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Contract Information</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero Section with 3D Animated Background -->
+  <section class="animation-hero position-relative">
+    <div class="animation-bg">
+      <div class="icontainer">
+        <div class="holder"><div class="box"></div></div>
+        <div class="holder"><div class="box"></div></div>
+        <div class="holder"><div class="box"></div></div>
+      </div>
+    </div>
+
+    <div class="container text-center hero-content position-relative" style="z-index: 2;">
+      <h1 class="hero-title" data-aos="fade-up">Smart Contract Information</h1>
+      <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+        Blockchain deployment records, verified addresses, and network infrastructure specifications.
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Information Container -->
+  <main class="py-5" style="background-color: var(--black-bg);">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+
+          <!-- Contract Details Card -->
+          <div class="info-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="info-header">
+              <div class="info-icon"><i class="fas fa-file-signature"></i></div>
+              <h3 class="h4 fw-bold text-light m-0">Deployment Details</h3>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="fas fa-map-marker-alt"></i> Contract Address</div>
+              <div class="info-value">
+                <span id="displayContractAddr">{{ CONTRACT_ADDRESS }}</span>
+                <button class="copy-btn" id="copyBtn" onclick="copyContractAddress()" aria-label="Copy contract address">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="fas fa-network-wired"></i> Blockchain Network</div>
+              <div class="info-value">Sepolia Testnet</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="fas fa-link"></i> Chain ID</div>
+              <div class="info-value">11155111</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="fas fa-gas-pump"></i> Native Gas Token</div>
+              <div class="info-value">SepoliaETH</div>
+            </div>
+          </div>
+
+          <!-- Network Architecture Card -->
+          <div class="info-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="info-header">
+              <div class="info-icon"><i class="fas fa-globe"></i></div>
+              <h3 class="h4 fw-bold text-light m-0">Network Configuration</h3>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="fas fa-server"></i> Active RPC Endpoint</div>
+              <div class="info-value text-secondary">sepolia.infura.io/v3/...</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="fas fa-eye"></i> Block Explorer</div>
+              <div class="info-value">
+                <a href="https://sepolia.etherscan.io/address/{{ CONTRACT_ADDRESS }}" target="_blank" rel="noopener noreferrer">
+                  sepolia.etherscan.io <i class="fas fa-external-link-alt small ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons" data-aos="fade-up" data-aos-delay="300">
+            <a id="etherscanLink" href="https://sepolia.etherscan.io/address/{{ CONTRACT_ADDRESS }}" target="_blank" class="btn-etherscan" rel="noopener noreferrer">
+              <i class="fas fa-external-link-alt"></i> View on Etherscan
+            </a>
+            <a href="{{ url_for('index') }}" class="btn-home">
+              <i class="fas fa-home"></i> Back to Home
+            </a>
+          </div>
+
+          <!-- Network Live Status Indicator -->
+          <div class="text-center mt-5" data-aos="fade-up">
+            <div class="status-indicator" id="pageNetworkStatus">
+              <span class="status-dot" id="pageStatusDot"></span>
+              <span id="pageStatusText" class="text-secondary small">Probing Ethereum node...</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const CONTRACT_ADDRESS = "{{ CONTRACT_ADDRESS }}";
+
+    async function copyContractAddress() {
+      const button = document.getElementById('copyBtn');
+      try {
+        await navigator.clipboard.writeText(CONTRACT_ADDRESS);
+        const original = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerHTML = original;
+          button.classList.remove('copied');
+        }, 2000);
+      } catch (e) {
+        console.error('Failed to copy: ', e);
+      }
+    }
+
+    async function checkPageNetworkStatus() {
+      const statusIndicator = document.getElementById('pageNetworkStatus');
+      const statusDot = document.getElementById('pageStatusDot');
+      const statusText = document.getElementById('pageStatusText');
+
+      try {
+        const response = await fetch("YOUR_INFURA_RPC_URL",{
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", method: "eth_blockNumber", params: [], id: 1 })
+        });
+
+        if (response.ok) {
+          statusIndicator.className = 'status-indicator status-online';
+          statusDot.className = 'status-dot online';
+          statusText.textContent = 'Sepolia Network Connected (Node Operational)';
+          statusText.className = 'text-light small';
+        } else {
+          throw new Error('RPC response not OK');
+        }
+      } catch (err) {
+        statusIndicator.className = 'status-indicator status-offline';
+        statusDot.className = 'status-dot offline';
+        statusText.textContent = 'Network Connection Failed';
+        statusText.className = 'text-danger small';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkPageNetworkStatus();
+      setInterval(checkPageNetworkStatus, 30000);
+    });
+  </script>
+{% endblock %}
+
