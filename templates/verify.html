@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+{% block title %}Verify Certificate - SECURE-Cert{% endblock %}
+{% block content %}
+
+<!-- Hero Header -->
+<section class="animation-hero position-relative">
+  <div class="animation-bg">
+    <div class="icontainer">
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+    </div>
+  </div>
+
+  <div class="container text-center hero-content position-relative" style="z-index: 2;">
+    <div class="hero-badge" data-aos="fade-down">
+      <i class="fas fa-search me-2"></i>Trust Verification
+    </div>
+    <h1 class="hero-title" data-aos="fade-up">Verify Certificate</h1>
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+      Verify certificate authenticity against the blockchain & execute forensic checks.
+    </p>
+  </div>
+</section>
+
+<!-- Verification Form Section -->
+<main class="py-5">
+  <div class="container verify-wrap">
+    <div class="verify-card" data-aos="fade-up">
+      <div class="text-center mb-4">
+        <div class="form-icon mb-2">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <h2 class="h3 fw-bold text-light">Audit Document</h2>
+        <p class="text-secondary small">Provide the certificate identifier and document to validate authenticity.</p>
+      </div>
+
+      <form id="verifyForm" method="POST" action="{{ url_for('verify') }}" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label" for="cert_id">
+            <i class="fas fa-tag me-1"></i> Certificate ID
+          </label>
+          <input type="text" name="cert_id" class="form-control custom-input" id="cert_id" placeholder="e.g. CERT-101" required>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">
+            <i class="fas fa-file-upload me-1"></i> Certificate Document (PDF, PNG, JPG)
+          </label>
+          <div class="file-upload-area" id="verifyUploadArea" role="button" tabindex="0">
+            <input type="file" name="file" id="verifyFileInput" class="d-none" accept=".pdf,.png,.jpg,.jpeg" required>
+            <div class="file-upload-content">
+              <i class="fas fa-cloud-upload-alt upload-icon"></i>
+              <p class="mb-1 text-light fw-medium">Drag & drop or click to upload</p>
+              <div class="file-types">Supported formats: PDF, PNG, JPG, JPEG</div>
+            </div>
+          </div>
+
+          <div class="file-preview mt-3" id="verifyFilePreview" style="display: none;">
+            <div class="file-info">
+              <i class="fas fa-file-alt text-warning me-2"></i>
+              <span class="file-name text-light fw-medium" id="previewFileName"></span>
+            </div>
+            <button type="button" class="btn-remove" onclick="clearVerifyFile()" aria-label="Remove uploaded file">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn hero-btn w-100 py-3" id="verifySubmitBtn" disabled>
+          <i class="fas fa-search me-2"></i> Verify on Blockchain
+        </button>
+      </form>
+
+      <div class="processing-overlay" id="verifyOverlay" style="display: none;">
+        <div class="processing-content text-center">
+          <div class="spinner mb-3"></div>
+          <h4 class="text-light fw-bold">Authenticating Document</h4>
+          <p class="text-secondary small">Computing SHA-256 and checking ledger records...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Pure UI scripts, no backend logic
+  const certIdInput = document.getElementById('cert_id');
+  const fileInput = document.getElementById('verifyFileInput');
+  const uploadArea = document.getElementById('verifyUploadArea');
+  const filePreview = document.getElementById('verifyFilePreview');
+  const previewFileName = document.getElementById('previewFileName');
+  const submitBtn = document.getElementById('verifySubmitBtn');
+  const verifyForm = document.getElementById('verifyForm');
+  const overlay = document.getElementById('verifyOverlay');
+
+  function checkFormValidity() {
+    const hasFile = fileInput.files.length > 0;
+    const hasId = certIdInput.value.trim().length > 0;
+    submitBtn.disabled = !(hasFile && hasId);
+  }
+
+  uploadArea.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      previewFileName.textContent = e.target.files[0].name;
+      filePreview.style.display = 'flex';
+      uploadArea.classList.add('active');
+      checkFormValidity();
+    } else {
+      clearVerifyFile();
+    }
+  });
+
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('active');
+  });
+
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('active'));
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('active');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    }
+  });
+
+  function clearVerifyFile() {
+    fileInput.value = '';
+    filePreview.style.display = 'none';
+    uploadArea.classList.remove('active');
+    checkFormValidity();
+  }
+
+  verifyForm.addEventListener('submit', () => {
+      overlay.style.display = 'flex';
+  });
+
+  certIdInput.addEventListener('input', checkFormValidity);
+</script>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "layout.html" %}
+{% block title %}Issue Certificate - SECURE-Cert{% endblock %}
+{% block content %}
+
+<!-- Hero Header -->
+<section class="animation-hero position-relative">
+  <div class="animation-bg">
+    <div class="icontainer">
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+    </div>
+  </div>
+
+  <div class="container text-center hero-content position-relative" style="z-index: 2;">
+    <div class="hero-badge" data-aos="fade-down">
+      <i class="fas fa-shield-alt me-2"></i>Blockchain Ledger
+    </div>
+    <h1 class="hero-title" data-aos="fade-up">Issue a Certificate</h1>
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+      Generate a SHA-256 fingerprint and record it permanently on the ledger.
+    </p>
+  </div>
+</section>
+
+<!-- Form Section -->
+<section class="form-section py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <div class="form-container" data-aos="fade-up">
+          
+          <div class="form-header text-center mb-4">
+            <div class="form-icon mb-2">
+              <i class="fas fa-plus-circle"></i>
+            </div>
+            <h2 class="h3 fw-bold text-light">Issue New Certificate</h2>
+            <p class="text-secondary small">Fill in the certificate metadata and attach your document.</p>
+          </div>
+
+          <form id="issueForm">
+            <!-- Certificate ID Input -->
+            <div class="mb-3">
+              <label class="form-label" for="cert_id">
+                <i class="fas fa-tag me-1"></i> Certificate ID
+              </label>
+              <input type="text" name="cert_id" id="cert_id" class="form-control custom-input" placeholder="e.g. CERT-2026-ETH-001" required>
+            </div>
+
+            <!-- Metadata Input -->
+            <div class="mb-4">
+              <label class="form-label" for="txid_note">
+                <i class="fas fa-sticky-note me-1"></i> Metadata / IPFS URI
+              </label>
+              <input type="text" name="txid_note" id="txid_note" class="form-control custom-input" placeholder="ipfs://Qm... or identifier">
+            </div>
+
+            <!-- Drag and Drop Upload Area -->
+            <div class="mb-4">
+              <label class="form-label">
+                <i class="fas fa-file-upload me-1"></i> Certificate File
+              </label>
+              <div class="file-upload-area" id="fileUploadArea" role="button" tabindex="0">
+                <input type="file" name="file" id="fileInput" class="d-none" accept=".pdf,.jpg,.jpeg,.png">
+                <div class="file-upload-content">
+                  <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                  <p class="mb-1 text-light fw-medium">Drag & drop or click to upload</p>
+                  <div class="file-types">Supported formats: PDF, JPG, JPEG, PNG</div>
+                </div>
+              </div>
+
+              <!-- Selected File Display -->
+              <div class="file-preview mt-3" id="filePreview" style="display: none;">
+                <div class="file-info">
+                  <i class="fas fa-file-alt text-warning me-2"></i>
+                  <span class="file-name text-light fw-medium"></span>
+                </div>
+                <button type="button" class="btn-remove" onclick="removeFile()" aria-label="Remove uploaded file">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn hero-btn w-100 py-3" id="submitBtn" disabled>
+              <i class="fas fa-cube me-2"></i> Issue Certificate on Blockchain
+            </button>
+          </form>
+
+          <!-- Processing Modal / Overlay -->
+          <div class="processing-overlay" id="processingOverlay" style="display: none;">
+            <div class="processing-content">
+              <div class="spinner mb-3"></div>
+              <h4 class="text-light fw-bold">Processing Transaction</h4>
+              <p class="text-secondary small">Submitting credential to blockchain...</p>
+            </div>
+          </div>
+
+          <!-- Toast Messages -->
+          <div id="statusMessage" class="toast-container mt-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Pure UI scripts for drag-and-drop, no Web3 logic
+  const fileInput = document.getElementById('fileInput');
+  const fileUploadArea = document.getElementById('fileUploadArea');
+  const filePreview = document.getElementById('filePreview');
+  const submitBtn = document.getElementById('submitBtn');
+  const certIdInput = document.getElementById('cert_id');
+  const processingOverlay = document.getElementById('processingOverlay');
+  const statusMessage = document.getElementById('statusMessage');
+
+  function updateSubmitButton() {
+    const isValid = certIdInput.value.trim() && fileInput.files.length > 0;
+    submitBtn.disabled = !isValid;
+  }
+
+  certIdInput.addEventListener('input', updateSubmitButton);
+  fileUploadArea.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      document.querySelector('.file-name').textContent = file.name;
+      filePreview.style.display = 'flex';
+      fileUploadArea.classList.add('active');
+      updateSubmitButton();
+    } else {
+      removeFile();
+    }
+  });
+
+  fileUploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.add('active');
+  });
+
+  fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('active'));
+
+  fileUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.remove('active');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    }
+  });
+
+  function removeFile() {
+    fileInput.value = '';
+    filePreview.style.display = 'none';
+    fileUploadArea.classList.remove('active');
+    updateSubmitButton();
+  }
+
+  document.getElementById('issueForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    processingOverlay.style.display = 'flex';
+    
+    // Simulate processing time then block the action
+    setTimeout(() => {
+      processingOverlay.style.display = 'none';
+      statusMessage.innerHTML = `
+        <div class="custom-toast error">
+          <div class="d-flex align-items-start gap-2">
+            <i class="fas fa-exclamation-circle mt-1"></i>
+            <div>Preview Mode: Smart contract issuance is disabled in this build.</div>
+          </div>
+        </div>
+      `;
+    }, 1500);
+  });
+</script>
+{% endblock %}

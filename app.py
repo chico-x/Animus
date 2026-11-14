@@ -33,13 +33,14 @@ def register():
 
 @app.route("/issue")
 def issue():
-    flash("Preview Mode: Blockchain issuance module is locked in this preview.", "error")
-    return redirect(url_for("index"))
+    return render_template("issue.html")
 
-@app.route("/verify")
+@app.route("/verify", methods=["GET", "POST"])
 def verify():
-    flash("Preview Mode: AI & Blockchain verification module is locked in this preview.", "error")
-    return redirect(url_for("index"))
+    if request.method == "POST":
+        flash("Preview Mode: AI & Blockchain verification engine is offline in this build.", "warning")
+        return redirect(url_for("verify"))
+    return render_template("verify.html")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
